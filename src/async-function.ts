@@ -4,6 +4,7 @@ import {Context} from '@actions/github/lib/context'
 import {GitHub} from '@actions/github/lib/utils'
 import * as glob from '@actions/glob'
 import * as io from '@actions/io'
+import type {OctokitOptions, OctokitPlugin} from '@octokit/core/types'
 
 const AsyncFunction = Object.getPrototypeOf(async () => null).constructor
 
@@ -12,6 +13,11 @@ export declare type AsyncFunctionArguments = {
   core: typeof core
   github: InstanceType<typeof GitHub>
   octokit: InstanceType<typeof GitHub>
+  getOctokit: (
+    token: string,
+    options?: OctokitOptions,
+    ...additionalPlugins: OctokitPlugin[]
+  ) => InstanceType<typeof GitHub>
   exec: typeof exec
   glob: typeof glob
   io: typeof io

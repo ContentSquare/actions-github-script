@@ -66,6 +66,7 @@ async function main(): Promise<void> {
       __original_require__: __non_webpack_require__,
       github,
       octokit: github,
+      getOctokit,
       context,
       core,
       exec,
