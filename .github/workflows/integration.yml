@@ -180,6 +180,36 @@ jobs:
           fi
           echo $'\u2705 Test passed' | tee -a $GITHUB_STEP_SUMMARY
 
+  test-get-octokit:
+    name: 'Integration test: getOctokit with token'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/install-dependencies
+      - id: secondary-client
+        name: Create a second client with getOctokit
+        uses: ./
+        env:
+          APP_TOKEN: ${{ github.token }}
+        with:
+          script: |
+            const appOctokit = getOctokit(process.env.APP_TOKEN)
+            const {data} = await appOctokit.rest.repos.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            })
+
+            return `${appOctokit !== github}:${data.full_name}`
+          result-encoding: string
+      - run: |
+          echo "- Validating secondary client output"
+          expected="true:actions/github-script"
+          if [[ "${{steps.secondary-client.outputs.result}}" != "$expected" ]]; then
+            echo $'::error::\u274C' "Expected '$expected', got ${{steps.secondary-client.outputs.result}}"
+            exit 1
+          fi
+          echo $'\u2705 Test passed' | tee -a $GITHUB_STEP_SUMMARY
+
   test-debug:
     strategy:
       matrix:
