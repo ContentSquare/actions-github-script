@@ -154,22 +154,28 @@ jobs:
             return endpoint({}).headers['user-agent']
           result-encoding: string
       - run: |
+          matches_user_agent() {
+            local actual="$1"
+            local prefix="$2"
+            [[ "$actual" =~ ^${prefix}(\ actions_orchestration_id/[^[:space:]]+)?\ octokit-core\.js/ ]]
+          }
+
           echo "- Validating user-agent default"
-          expected="actions/github-script octokit-core.js/"
-          if [[ "${{steps.user-agent-default.outputs.result}}" != "$expected"* ]]; then
-            echo $'::error::\u274C' "Expected user-agent to start with '$expected', got ${{steps.user-agent-default.outputs.result}}"
+          expected="actions/github-script"
+          if ! matches_user_agent "${{steps.user-agent-default.outputs.result}}" "$expected"; then
+            echo $'::error::\u274C' "Expected user-agent to start with '$expected' and include 'octokit-core.js/', got ${{steps.user-agent-default.outputs.result}}"
             exit 1
           fi
           echo "- Validating user-agent set to a value"
-          expected="foobar octokit-core.js/"
-          if [[ "${{steps.user-agent-set.outputs.result}}" != "$expected"* ]]; then
-            echo $'::error::\u274C' "Expected user-agent to start with '$expected', got ${{steps.user-agent-set.outputs.result}}"
+          expected="foobar"
+          if ! matches_user_agent "${{steps.user-agent-set.outputs.result}}" "$expected"; then
+            echo $'::error::\u274C' "Expected user-agent to start with '$expected' and include 'octokit-core.js/', got ${{steps.user-agent-set.outputs.result}}"
             exit 1
           fi
           echo "- Validating user-agent set to an empty string"
-          expected="actions/github-script octokit-core.js/"
-          if [[ "${{steps.user-agent-empty.outputs.result}}" != "$expected"* ]]; then
-            echo $'::error::\u274C' "Expected user-agent to start with '$expected', got ${{steps.user-agent-empty.outputs.result}}"
+          expected="actions/github-script"
+          if ! matches_user_agent "${{steps.user-agent-empty.outputs.result}}" "$expected"; then
+            echo $'::error::\u274C' "Expected user-agent to start with '$expected' and include 'octokit-core.js/', got ${{steps.user-agent-empty.outputs.result}}"
             exit 1
           fi
           echo $'\u2705 Test passed' | tee -a $GITHUB_STEP_SUMMARY
