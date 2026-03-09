@@ -8,6 +8,18 @@ describe('callAsyncFunction', () => {
     expect(result).toEqual('bar')
   })
 
+  test('passes getOctokit through the script context', async () => {
+    const getOctokit = jest.fn().mockReturnValue('secondary-client')
+
+    const result = await callAsyncFunction(
+      {getOctokit} as any,
+      "return getOctokit('token')"
+    )
+
+    expect(getOctokit).toHaveBeenCalledWith('token')
+    expect(result).toEqual('secondary-client')
+  })
+
   test('throws on ReferenceError', async () => {
     expect.assertions(1)
 

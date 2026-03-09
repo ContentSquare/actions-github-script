@@ -504,6 +504,8 @@ The `GITHUB_TOKEN` used by default is scoped to the current repository, see [Aut
 
 If you need access to a different repository or an API that the `GITHUB_TOKEN` doesn't have permissions to, you can provide your own [PAT](https://help.github.com/github/authenticating-to-github/creating-a-personal-access-token-for-the-command-line) as a secret using the `github-token` input.
 
+If you need to use multiple tokens in the same script, `getOctokit` is also available in the script context so you can create additional authenticated clients without using `require('@actions/github')`.
+
 [Learn more about creating and using encrypted secrets](https://docs.github.com/actions/reference/encrypted-secrets)
 
 ```yaml
@@ -516,6 +518,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/github-script@v8
+        env:
+          APP_TOKEN: ${{ secrets.MY_OTHER_PAT }}
         with:
           github-token: ${{ secrets.MY_PAT }}
           script: |
@@ -524,6 +528,13 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               labels: ['Triage']
+            })
+
+            const appOctokit = getOctokit(process.env.APP_TOKEN)
+            await appOctokit.rest.repos.createDispatchEvent({
+              owner: 'my-org',
+              repo: 'another-repo',
+              event_type: 'trigger-deploy'
             })
 ```
 

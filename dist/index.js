@@ -36289,6 +36289,7 @@ async function main() {
         __original_require__: require,
         github,
         octokit: github,
+        getOctokit: lib_github.getOctokit,
         context: lib_github.context,
         core: core,
         exec: exec,
