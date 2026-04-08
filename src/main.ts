@@ -64,7 +64,7 @@ async function main(): Promise<void> {
   // orchestration ID, and the action's retries input.
   const configuredGetOctokit = createConfiguredGetOctokit(
     getOctokit,
-    opts,
+    {...opts},
     retry,
     requestLog
   )
@@ -76,7 +76,7 @@ async function main(): Promise<void> {
       __original_require__: __non_webpack_require__,
       github,
       octokit: github,
-      getOctokit: configuredGetOctokit,
+      createOctokit: configuredGetOctokit,
       context,
       core,
       exec,

@@ -3,12 +3,12 @@
 import {getOctokit} from '@actions/github'
 import {callAsyncFunction} from '../src/async-function'
 
-describe('getOctokit integration via callAsyncFunction', () => {
+describe('createOctokit integration via callAsyncFunction', () => {
   test('real getOctokit creates a functional Octokit client in script scope', async () => {
     const result = await callAsyncFunction(
-      {getOctokit} as any,
+      {createOctokit: getOctokit} as any,
       `
-        const client = getOctokit('fake-token-for-test')
+        const client = createOctokit('fake-token-for-test')
         return {
           hasRest: typeof client.rest === 'object',
           hasGraphql: typeof client.graphql === 'function',
@@ -32,9 +32,9 @@ describe('getOctokit integration via callAsyncFunction', () => {
     const primary = getOctokit('primary-token')
 
     const result = await callAsyncFunction(
-      {github: primary, getOctokit} as any,
+      {github: primary, createOctokit: getOctokit} as any,
       `
-        const secondary = getOctokit('secondary-token')
+        const secondary = createOctokit('secondary-token')
         return {
           bothHaveRest: typeof github.rest === 'object' && typeof secondary.rest === 'object',
           areDistinct: github !== secondary
@@ -48,11 +48,11 @@ describe('getOctokit integration via callAsyncFunction', () => {
     })
   })
 
-  test('getOctokit accepts options for GHES base URL', async () => {
+  test('createOctokit accepts options for GHES base URL', async () => {
     const result = await callAsyncFunction(
-      {getOctokit} as any,
+      {createOctokit: getOctokit} as any,
       `
-        const client = getOctokit('fake-token', {
+        const client = createOctokit('fake-token', {
           baseUrl: 'https://ghes.example.com/api/v3'
         })
         return typeof client.rest === 'object'
@@ -62,12 +62,12 @@ describe('getOctokit integration via callAsyncFunction', () => {
     expect(result).toBe(true)
   })
 
-  test('multiple getOctokit calls produce independent clients with different tokens', async () => {
+  test('multiple createOctokit calls produce independent clients with different tokens', async () => {
     const result = await callAsyncFunction(
-      {getOctokit} as any,
+      {createOctokit: getOctokit} as any,
       `
-        const clientA = getOctokit('token-a')
-        const clientB = getOctokit('token-b')
+        const clientA = createOctokit('token-a')
+        const clientB = createOctokit('token-b')
         return {
           aHasRest: typeof clientA.rest === 'object',
           bHasRest: typeof clientB.rest === 'object',

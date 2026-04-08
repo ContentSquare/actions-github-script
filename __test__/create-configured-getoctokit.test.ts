@@ -76,6 +76,23 @@ describe('createConfiguredGetOctokit', () => {
     )
   })
 
+  test('deep-merges retry so partial overrides preserve existing settings', () => {
+    const raw = makeMockGetOctokit()
+    const defaults = {
+      retry: {enabled: true, retries: 3}
+    }
+
+    const wrapped = createConfiguredGetOctokit(raw as any, defaults)
+    wrapped('tok' as any, {retry: {retries: 5}} as any)
+
+    expect(raw).toHaveBeenCalledWith(
+      'tok',
+      expect.objectContaining({
+        retry: {enabled: true, retries: 5}
+      })
+    )
+  })
+
   test('user can override request.retries explicitly', () => {
     const raw = makeMockGetOctokit()
     const defaults = {request: {retries: 3}}
@@ -158,15 +175,35 @@ describe('createConfiguredGetOctokit', () => {
 
   test('baseUrl: undefined from user does not clobber default', () => {
     const raw = makeMockGetOctokit()
-    const defaults = {baseUrl: 'https://api.github.com'}
+    const defaults = {baseUrl: 'https://ghes.example.com/api/v3'}
 
     const wrapped = createConfiguredGetOctokit(raw as any, defaults)
     wrapped('tok' as any, {baseUrl: undefined} as any)
 
-    // undefined spread still overwrites — this documents current behavior.
-    // The `baseUrl` key is present but value is undefined.
     const calledOpts = raw.mock.calls[0][1]
-    expect(calledOpts).toHaveProperty('baseUrl')
+    expect(calledOpts.baseUrl).toBe('https://ghes.example.com/api/v3')
+  })
+
+  test('undefined values in nested request are stripped', () => {
+    const raw = makeMockGetOctokit()
+    const defaults = {request: {retries: 3, agent: 'proxy'}}
+
+    const wrapped = createConfiguredGetOctokit(raw as any, defaults)
+    wrapped('tok' as any, {request: {retries: undefined, timeout: 5000}} as any)
+
+    const calledOpts = raw.mock.calls[0][1]
+    expect(calledOpts.request).toEqual({retries: 3, agent: 'proxy', timeout: 5000})
+  })
+
+  test('undefined values in nested retry are stripped', () => {
+    const raw = makeMockGetOctokit()
+    const defaults = {retry: {enabled: true, retries: 3}}
+
+    const wrapped = createConfiguredGetOctokit(raw as any, defaults)
+    wrapped('tok' as any, {retry: {enabled: undefined, retries: 5}} as any)
+
+    const calledOpts = raw.mock.calls[0][1]
+    expect(calledOpts.retry).toEqual({enabled: true, retries: 5})
   })
 
   test('each call creates an independent client', () => {
@@ -182,5 +219,40 @@ describe('createConfiguredGetOctokit', () => {
     expect(a).toBe('client-a')
     expect(b).toBe('client-b')
     expect(raw).toHaveBeenCalledTimes(2)
+  })
+
+  test('does not mutate defaultOptions between calls', () => {
+    const raw = makeMockGetOctokit()
+    const defaults = {
+      request: {retries: 3},
+      retry: {enabled: true}
+    }
+    const originalDefaults = JSON.parse(JSON.stringify(defaults))
+
+    const wrapped = createConfiguredGetOctokit(raw as any, defaults)
+    wrapped('tok' as any, {request: {timeout: 5000}, retry: {retries: 10}} as any)
+    wrapped('tok' as any, {request: {timeout: 9000}} as any)
+
+    expect(defaults).toEqual(originalDefaults)
+  })
+
+  test('falsy-but-valid values are preserved, only undefined is stripped', () => {
+    const raw = makeMockGetOctokit()
+    const defaults = {baseUrl: 'https://ghes.example.com/api/v3'}
+
+    const wrapped = createConfiguredGetOctokit(raw as any, defaults)
+    wrapped('tok' as any, {
+      log: null,
+      retries: 0,
+      debug: false,
+      userAgent: ''
+    } as any)
+
+    const calledOpts = raw.mock.calls[0][1]
+    expect(calledOpts.log).toBeNull()
+    expect(calledOpts.retries).toBe(0)
+    expect(calledOpts.debug).toBe(false)
+    expect(calledOpts.userAgent).toBe('')
+    expect(calledOpts.baseUrl).toBe('https://ghes.example.com/api/v3')
   })
 })

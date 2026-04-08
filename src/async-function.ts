@@ -13,7 +13,7 @@ export declare type AsyncFunctionArguments = {
   core: typeof core
   github: InstanceType<typeof GitHub>
   octokit: InstanceType<typeof GitHub>
-  getOctokit: typeof getOctokit
+  createOctokit: typeof getOctokit
   exec: typeof exec
   glob: typeof glob
   io: typeof io

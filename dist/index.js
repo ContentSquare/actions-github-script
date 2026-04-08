@@ -36190,12 +36190,21 @@ function callAsyncFunction(args, source) {
 
 ;// CONCATENATED MODULE: ./src/create-configured-getoctokit.ts
 /**
+ * Strip keys whose value is `undefined` so they don't clobber defaults
+ * during object spread (e.g. `{baseUrl: undefined}` would wipe a GHES URL).
+ */
+function stripUndefined(obj) {
+    return Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined));
+}
+/**
  * Creates a wrapped getOctokit that inherits default options and plugins.
  * Secondary clients created via the wrapper get the same retry, logging,
  * orchestration ID, and retries count as the pre-built `github` client.
  *
- * - `request` is deep-merged so partial overrides (e.g. `{request: {timeout: 5000}}`)
- *   don't clobber inherited `retries`, proxy agent, or fetch defaults.
+ * - `request` and `retry` are deep-merged so partial overrides
+ *   (e.g. `{request: {timeout: 5000}}`) don't clobber inherited values.
+ * - `undefined` values in user options are stripped to prevent accidental
+ *   clobbering of defaults (e.g. GHES `baseUrl`).
  * - Default plugins (retry, requestLog) are always included; duplicates are skipped.
  */
 function createConfiguredGetOctokit(rawGetOctokit, defaultOptions, 
@@ -36203,15 +36212,17 @@ function createConfiguredGetOctokit(rawGetOctokit, defaultOptions,
 ...defaultPlugins) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return ((token, options, ...plugins) => {
-        var _a, _b;
-        const userOpts = options || {};
+        var _a, _b, _c, _d;
+        const userOpts = stripUndefined(options !== null && options !== void 0 ? options : {});
         const defaultRequest = (_a = defaultOptions.request) !== null && _a !== void 0 ? _a : {};
-        const userRequest = (_b = userOpts.request) !== null && _b !== void 0 ? _b : {};
+        const userRequest = stripUndefined((_b = userOpts.request) !== null && _b !== void 0 ? _b : {});
+        const defaultRetry = (_c = defaultOptions.retry) !== null && _c !== void 0 ? _c : {};
+        const userRetry = stripUndefined((_d = userOpts.retry) !== null && _d !== void 0 ? _d : {});
         const merged = {
             ...defaultOptions,
             ...userOpts,
-            // Deep-merge `request` to preserve retries, proxy agent, and fetch
-            request: { ...defaultRequest, ...userRequest }
+            request: { ...defaultRequest, ...userRequest },
+            retry: { ...defaultRetry, ...userRetry }
         };
         // Deduplicate: default plugins first, then user plugins that aren't already present
         const allPlugins = [...defaultPlugins];
@@ -36322,14 +36333,14 @@ async function main() {
     const script = core.getInput('script', { required: true });
     // Wrap getOctokit so secondary clients inherit retry, logging,
     // orchestration ID, and the action's retries input.
-    const configuredGetOctokit = createConfiguredGetOctokit(lib_github.getOctokit, opts, plugin_retry_dist_node.retry, dist_node.requestLog);
+    const configuredGetOctokit = createConfiguredGetOctokit(lib_github.getOctokit, { ...opts }, plugin_retry_dist_node.retry, dist_node.requestLog);
     // Using property/value shorthand on `require` (e.g. `{require}`) causes compilation errors.
     const result = await callAsyncFunction({
         require: wrapRequire,
         __original_require__: require,
         github,
         octokit: github,
-        getOctokit: configuredGetOctokit,
+        createOctokit: configuredGetOctokit,
         context: lib_github.context,
         core: core,
         exec: exec,

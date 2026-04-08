@@ -8,26 +8,28 @@ describe('callAsyncFunction', () => {
     expect(result).toEqual('bar')
   })
 
-  test('passes getOctokit through the script context', async () => {
-    const getOctokit = jest.fn().mockReturnValue('secondary-client')
+  test('passes createOctokit through the script context', async () => {
+    const createOctokit = jest.fn().mockReturnValue('secondary-client')
 
     const result = await callAsyncFunction(
-      {getOctokit} as any,
-      "return getOctokit('token')"
+      {createOctokit} as any,
+      "return createOctokit('token')"
     )
 
-    expect(getOctokit).toHaveBeenCalledWith('token')
+    expect(createOctokit).toHaveBeenCalledWith('token')
     expect(result).toEqual('secondary-client')
   })
 
-  test('getOctokit creates client independent from github', async () => {
+  test('createOctokit creates client independent from github', async () => {
     const github = {rest: {issues: 'primary'}}
-    const getOctokit = jest.fn().mockReturnValue({rest: {issues: 'secondary'}})
+    const createOctokit = jest
+      .fn()
+      .mockReturnValue({rest: {issues: 'secondary'}})
 
     const result = await callAsyncFunction(
-      {github, getOctokit} as any,
+      {github, createOctokit} as any,
       `
-        const secondary = getOctokit('other-token')
+        const secondary = createOctokit('other-token')
         return {
           primary: github.rest.issues,
           secondary: secondary.rest.issues,
@@ -41,32 +43,32 @@ describe('callAsyncFunction', () => {
       secondary: 'secondary',
       different: true
     })
-    expect(getOctokit).toHaveBeenCalledWith('other-token')
+    expect(createOctokit).toHaveBeenCalledWith('other-token')
   })
 
-  test('getOctokit passes options through', async () => {
-    const getOctokit = jest.fn().mockReturnValue('client-with-opts')
+  test('createOctokit passes options through', async () => {
+    const createOctokit = jest.fn().mockReturnValue('client-with-opts')
 
     const result = await callAsyncFunction(
-      {getOctokit} as any,
-      `return getOctokit('my-token', { baseUrl: 'https://ghes.example.com/api/v3' })`
+      {createOctokit} as any,
+      `return createOctokit('my-token', { baseUrl: 'https://ghes.example.com/api/v3' })`
     )
 
-    expect(getOctokit).toHaveBeenCalledWith('my-token', {
+    expect(createOctokit).toHaveBeenCalledWith('my-token', {
       baseUrl: 'https://ghes.example.com/api/v3'
     })
     expect(result).toEqual('client-with-opts')
   })
 
-  test('getOctokit supports plugins', async () => {
-    const getOctokit = jest.fn().mockReturnValue('client-with-plugins')
+  test('createOctokit supports plugins', async () => {
+    const createOctokit = jest.fn().mockReturnValue('client-with-plugins')
 
     const result = await callAsyncFunction(
-      {getOctokit} as any,
-      `return getOctokit('my-token', { previews: ['v3'] }, 'pluginA', 'pluginB')`
+      {createOctokit} as any,
+      `return createOctokit('my-token', { previews: ['v3'] }, 'pluginA', 'pluginB')`
     )
 
-    expect(getOctokit).toHaveBeenCalledWith(
+    expect(createOctokit).toHaveBeenCalledWith(
       'my-token',
       {previews: ['v3']},
       'pluginA',
@@ -75,24 +77,24 @@ describe('callAsyncFunction', () => {
     expect(result).toEqual('client-with-plugins')
   })
 
-  test('multiple getOctokit calls produce independent clients', async () => {
-    const getOctokit = jest
+  test('multiple createOctokit calls produce independent clients', async () => {
+    const createOctokit = jest
       .fn()
       .mockReturnValueOnce({id: 'client-a'})
       .mockReturnValueOnce({id: 'client-b'})
 
     const result = await callAsyncFunction(
-      {getOctokit} as any,
+      {createOctokit} as any,
       `
-        const a = getOctokit('token-a')
-        const b = getOctokit('token-b')
+        const a = createOctokit('token-a')
+        const b = createOctokit('token-b')
         return { a: a.id, b: b.id, different: a !== b }
       `
     )
 
-    expect(getOctokit).toHaveBeenCalledTimes(2)
-    expect(getOctokit).toHaveBeenNthCalledWith(1, 'token-a')
-    expect(getOctokit).toHaveBeenNthCalledWith(2, 'token-b')
+    expect(createOctokit).toHaveBeenCalledTimes(2)
+    expect(createOctokit).toHaveBeenNthCalledWith(1, 'token-a')
+    expect(createOctokit).toHaveBeenNthCalledWith(2, 'token-b')
     expect(result).toEqual({a: 'client-a', b: 'client-b', different: true})
   })
 
