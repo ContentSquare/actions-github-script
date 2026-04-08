@@ -192,7 +192,11 @@ describe('createConfiguredGetOctokit', () => {
     wrapped('tok' as any, {request: {retries: undefined, timeout: 5000}} as any)
 
     const calledOpts = raw.mock.calls[0][1]
-    expect(calledOpts.request).toEqual({retries: 3, agent: 'proxy', timeout: 5000})
+    expect(calledOpts.request).toEqual({
+      retries: 3,
+      agent: 'proxy',
+      timeout: 5000
+    })
   })
 
   test('undefined values in nested retry are stripped', () => {
@@ -230,7 +234,10 @@ describe('createConfiguredGetOctokit', () => {
     const originalDefaults = JSON.parse(JSON.stringify(defaults))
 
     const wrapped = createConfiguredGetOctokit(raw as any, defaults)
-    wrapped('tok' as any, {request: {timeout: 5000}, retry: {retries: 10}} as any)
+    wrapped(
+      'tok' as any,
+      {request: {timeout: 5000}, retry: {retries: 10}} as any
+    )
     wrapped('tok' as any, {request: {timeout: 9000}} as any)
 
     expect(defaults).toEqual(originalDefaults)
@@ -241,12 +248,15 @@ describe('createConfiguredGetOctokit', () => {
     const defaults = {baseUrl: 'https://ghes.example.com/api/v3'}
 
     const wrapped = createConfiguredGetOctokit(raw as any, defaults)
-    wrapped('tok' as any, {
-      log: null,
-      retries: 0,
-      debug: false,
-      userAgent: ''
-    } as any)
+    wrapped(
+      'tok' as any,
+      {
+        log: null,
+        retries: 0,
+        debug: false,
+        userAgent: ''
+      } as any
+    )
 
     const calledOpts = raw.mock.calls[0][1]
     expect(calledOpts.log).toBeNull()

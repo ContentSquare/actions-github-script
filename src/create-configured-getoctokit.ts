@@ -4,9 +4,7 @@ import {getOctokit} from '@actions/github'
  * Strip keys whose value is `undefined` so they don't clobber defaults
  * during object spread (e.g. `{baseUrl: undefined}` would wipe a GHES URL).
  */
-function stripUndefined(
-  obj: Record<string, unknown>
-): Record<string, unknown> {
+function stripUndefined(obj: Record<string, unknown>): Record<string, unknown> {
   return Object.fromEntries(
     Object.entries(obj).filter(([, v]) => v !== undefined)
   )
