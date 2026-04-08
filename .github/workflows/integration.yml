@@ -181,19 +181,19 @@ jobs:
           echo $'\u2705 Test passed' | tee -a $GITHUB_STEP_SUMMARY
 
   test-get-octokit:
-    name: 'Integration test: getOctokit with token'
+    name: 'Integration test: createOctokit with token'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/install-dependencies
       - id: secondary-client
-        name: Create a second client with getOctokit
+        name: Create a second client with createOctokit
         uses: ./
         env:
           APP_TOKEN: ${{ github.token }}
         with:
           script: |
-            const appOctokit = getOctokit(process.env.APP_TOKEN)
+            const appOctokit = createOctokit(process.env.APP_TOKEN)
             const {data} = await appOctokit.rest.repos.get({
               owner: context.repo.owner,
               repo: context.repo.repo
