@@ -36188,6 +36188,42 @@ function callAsyncFunction(args, source) {
     return fn(...Object.values(args));
 }
 
+;// CONCATENATED MODULE: ./src/create-configured-getoctokit.ts
+/**
+ * Creates a wrapped getOctokit that inherits default options and plugins.
+ * Secondary clients created via the wrapper get the same retry, logging,
+ * orchestration ID, and retries count as the pre-built `github` client.
+ *
+ * - `request` is deep-merged so partial overrides (e.g. `{request: {timeout: 5000}}`)
+ *   don't clobber inherited `retries`, proxy agent, or fetch defaults.
+ * - Default plugins (retry, requestLog) are always included; duplicates are skipped.
+ */
+function createConfiguredGetOctokit(rawGetOctokit, defaultOptions, 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+...defaultPlugins) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return ((token, options, ...plugins) => {
+        var _a, _b;
+        const userOpts = options || {};
+        const defaultRequest = (_a = defaultOptions.request) !== null && _a !== void 0 ? _a : {};
+        const userRequest = (_b = userOpts.request) !== null && _b !== void 0 ? _b : {};
+        const merged = {
+            ...defaultOptions,
+            ...userOpts,
+            // Deep-merge `request` to preserve retries, proxy agent, and fetch
+            request: { ...defaultRequest, ...userRequest }
+        };
+        // Deduplicate: default plugins first, then user plugins that aren't already present
+        const allPlugins = [...defaultPlugins];
+        for (const plugin of plugins) {
+            if (!allPlugins.includes(plugin)) {
+                allPlugins.push(plugin);
+            }
+        }
+        return rawGetOctokit(token, merged, ...allPlugins);
+    });
+}
+
 ;// CONCATENATED MODULE: ./src/retry-options.ts
 
 function getRetryOptions(retries, exemptStatusCodes, defaultOptions) {
@@ -36256,6 +36292,7 @@ const wrapRequire = new Proxy(require, {
 
 
 
+
 process.on('unhandledRejection', handleError);
 main().catch(handleError);
 async function main() {
@@ -36283,13 +36320,16 @@ async function main() {
     }
     const github = (0,lib_github.getOctokit)(token, opts, plugin_retry_dist_node.retry, dist_node.requestLog);
     const script = core.getInput('script', { required: true });
+    // Wrap getOctokit so secondary clients inherit retry, logging,
+    // orchestration ID, and the action's retries input.
+    const configuredGetOctokit = createConfiguredGetOctokit(lib_github.getOctokit, opts, plugin_retry_dist_node.retry, dist_node.requestLog);
     // Using property/value shorthand on `require` (e.g. `{require}`) causes compilation errors.
     const result = await callAsyncFunction({
         require: wrapRequire,
         __original_require__: require,
         github,
         octokit: github,
-        getOctokit: lib_github.getOctokit,
+        getOctokit: configuredGetOctokit,
         context: lib_github.context,
         core: core,
         exec: exec,
